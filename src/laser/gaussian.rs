@@ -297,6 +297,7 @@ pub mod tests {
         };
 
         let gradient = get_gaussian_beam_intensity_gradient(&beam, &pos1, &grf);
+        println!("Gradient: x = {}, y = {}, z = {}", gradient[0], gradient[1], gradient[2]);
         assert_approx_eq!(gradient[0], -2.49605032e+13, 1e+8_f64);
         assert_approx_eq!(gradient[1], 0.0, 1e+9_f64);
         assert_approx_eq!(gradient[2], -4.20876029e+08, 1e+6_f64); // Modified by Yijun on 2024/07/16
