@@ -278,7 +278,7 @@ pub mod tests {
         assert_approx_eq!(gradient[2], -4.20876029e+08, 1e+6_f64); // Modified by Yijun on 2024/07/16
     }
 
-    #[test]
+    #[test] // added by Yijun on 2024/07/16 to test the gradient calculation for a beam with ellipticity
     fn test_get_elliptic_gaussian_beam_intensity_gradient() {
         let beam = GaussianBeam {
             direction: Vector3::z(),
@@ -297,10 +297,9 @@ pub mod tests {
         };
 
         let gradient = get_gaussian_beam_intensity_gradient(&beam, &pos1, &grf);
-        println!("Gradient: x = {}, y = {}, z = {}", gradient[0], gradient[1], gradient[2]);
         assert_approx_eq!(gradient[0], -2.11796152e+13, 1e+8_f64);
         assert_approx_eq!(gradient[1], -2.82394869e+13, 1e+9_f64);
-        assert_approx_eq!(gradient[2], -4.03781010e+08, 1e+6_f64); // Modified by Yijun on 2024/07/16
+        assert_approx_eq!(gradient[2], -4.03781010e+08, 1e+6_f64); 
     }
 
     #[test]
