@@ -289,7 +289,7 @@ pub mod tests {
             ellipticity: 0.5,
         };
         let pos1 = Position {
-            pos: Vector3::new(10.0e-6, 0.0, 30.0e-6),
+            pos: Vector3::new(10.0e-6, 10.0e-6, 30.0e-6),
         };
         let grf = Frame {
             x_vector: Vector3::x(),
