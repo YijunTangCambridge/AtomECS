@@ -215,7 +215,7 @@ pub mod tests {
         let atom1 = test_world
             .create_entity()
             .with(Position {
-                pos: Vector3::new(20.0e-6, 20.0e-6, 20.0e-6),
+                pos: Vector3::new(20.0e-6, 25.0e-6, 20.0e-6),
             })
             .with(LaserIntensityGradientSamplers {
                 contents: [LaserIntensityGradientSampler::default();
