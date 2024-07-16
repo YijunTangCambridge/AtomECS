@@ -185,7 +185,7 @@ pub mod tests {
         test_world.register::<DipoleLight>();
 
         let beam = GaussianBeam {
-            direction: Vector3::z(),
+            direction: Vector3::x(),
             intersection: Vector3::new(0.0, 0.0, 0.0),
             e_radius: 70.71067812e-6,
             power: 100.0,
@@ -204,8 +204,8 @@ pub mod tests {
             })
             .with(beam)
             .with(Frame {
-                x_vector: Vector3::x(),
-                y_vector: Vector3::y(),
+                x_vector: Vector3::y(),
+                y_vector: Vector3::z(),
             })
             .with(DipoleLight {
                 wavelength: 1064.0e-9,
