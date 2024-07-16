@@ -204,8 +204,8 @@ pub mod tests {
             })
             .with(beam)
             .with(Frame {
-                x_vector: Vector3::z(),
-                y_vector: Vector3::y(),
+                x_vector: Vector3::y(),
+                y_vector: Vector3::z(),
             })
             .with(DipoleLight {
                 wavelength: 1064.0e-9,
