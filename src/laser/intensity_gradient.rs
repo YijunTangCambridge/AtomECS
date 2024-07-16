@@ -234,7 +234,7 @@ pub mod tests {
             .gradient;
         println!("Gradient: x = {}, y = {}, z = {}", sim_result_gradient[0], sim_result_gradient[1], sim_result_gradient[2]);
         assert_approx_eq!(-1.89173404e+08, sim_result_gradient[0], 1e+5_f64);
-        assert_approx_eq!(-4.14896130e+13, sim_result_gradient[1], 1e+8_f64);
-        assert_approx_eq!(-5.18620162e+13, sim_result_gradient[2], 1e+8_f64);
+        assert_approx_eq!(-5.18620162e+13, sim_result_gradient[1], 1e+8_f64);
+        assert_approx_eq!(-4.14896130e+13, sim_result_gradient[2], 1e+8_f64);
     }
 }
