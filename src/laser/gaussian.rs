@@ -275,7 +275,31 @@ pub mod tests {
         let gradient = get_gaussian_beam_intensity_gradient(&beam, &pos1, &grf);
         assert_approx_eq!(gradient[0], -2.49605032e+13, 1e+8_f64);
         assert_approx_eq!(gradient[1], 0.0, 1e+9_f64);
-        assert_approx_eq!(gradient[2], -4.20876029e+08, 1e+6_f64);
+        assert_approx_eq!(gradient[2], -4.20876029e+08, 1e+6_f64); // Modified by Yijun on 2024/07/16
+    }
+
+    #[test]
+    fn test_get_elliptic_gaussian_beam_intensity_gradient() {
+        let beam = GaussianBeam {
+            direction: Vector3::z(),
+            intersection: Vector3::new(0.0, 0.0, 0.0),
+            e_radius: 70.71067812e-6,
+            power: 100.0,
+            rayleigh_range: calculate_rayleigh_range(&1064.0e-9, &70.71067812e-6),
+            ellipticity: 0.5,
+        };
+        let pos1 = Position {
+            pos: Vector3::new(10.0e-6, 0.0, 30.0e-6),
+        };
+        let grf = Frame {
+            x_vector: Vector3::x(),
+            y_vector: Vector3::y(),
+        };
+
+        let gradient = get_gaussian_beam_intensity_gradient(&beam, &pos1, &grf);
+        assert_approx_eq!(gradient[0], -2.49605032e+13, 1e+8_f64);
+        assert_approx_eq!(gradient[1], 0.0, 1e+9_f64);
+        assert_approx_eq!(gradient[2], -4.20876029e+08, 1e+6_f64); // Modified by Yijun on 2024/07/16
     }
 
     #[test]
