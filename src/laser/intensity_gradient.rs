@@ -232,7 +232,7 @@ pub mod tests {
             .expect("Entity not found!")
             .contents[0]
             .gradient;
-
+        println!("Gradient: x = {}, y = {}, z = {}", sim_result_gradient[0], sim_result_gradient[1], sim_result_gradient[2]);
         assert_approx_eq!(-8.4628e+7, sim_result_gradient[0], 1e+5_f64);
         assert_approx_eq!(-4.33992902e+13, sim_result_gradient[1], 1e+8_f64);
         assert_approx_eq!(-4.33992902e+13, sim_result_gradient[2], 1e+8_f64);
