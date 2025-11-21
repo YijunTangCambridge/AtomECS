@@ -99,13 +99,17 @@ pub mod tests {
         let beam = GaussianBeam {
             direction: Vector3::z(),
             intersection: Vector3::new(0.0, 0.0, 0.0),
-            e_radius: 70.71067812e-6,
+            w0_x: 70.71067812e-6 * f64::sqrt(2.0),
+            w0_y: 70.71067812e-6 * f64::sqrt(2.0),
             power: 100.0,
-            rayleigh_range: crate::laser::gaussian::calculate_rayleigh_range(
+            rayleigh_range_x: crate::laser::gaussian::calculate_rayleigh_range(
                 &1064.0e-9,
-                &70.71067812e-6,
+                &(70.71067812e-6 * f64::sqrt(2.0)),
             ),
-            ellipticity: 0.0,
+            rayleigh_range_y: crate::laser::gaussian::calculate_rayleigh_range(
+                &1064.0e-9,
+                &(70.71067812e-6 * f64::sqrt(2.0)),
+            ),
         };
 
         test_world
@@ -185,15 +189,19 @@ pub mod tests {
         test_world.register::<DipoleLight>();
 
         let beam = GaussianBeam {
-            direction: Vector3::x(),
+            direction: Vector3::z(),
             intersection: Vector3::new(0.0, 0.0, 0.0),
-            e_radius: 70.71067812e-6,
+            w0_x: 70.71067812e-6 * f64::sqrt(2.0),
+            w0_y: 70.71067812e-6 * f64::sqrt(2.0),
             power: 100.0,
-            rayleigh_range: crate::laser::gaussian::calculate_rayleigh_range(
+            rayleigh_range_x: crate::laser::gaussian::calculate_rayleigh_range(
                 &1064.0e-9,
-                &70.71067812e-6,
+                &(70.71067812e-6 * f64::sqrt(2.0)),
             ),
-            ellipticity: 0.0,
+            rayleigh_range_y: crate::laser::gaussian::calculate_rayleigh_range(
+                &1064.0e-9,
+                &(70.71067812e-6 * f64::sqrt(2.0)),
+            ),
         };
 
         test_world

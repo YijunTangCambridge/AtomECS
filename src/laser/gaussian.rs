@@ -134,8 +134,8 @@ impl GaussianBeam {
         intersection: Vector3<f64>,
         direction: Vector3<f64>,
         power: f64,
-        w0_x: f64
-        w0_y: f64
+        w0_x: f64,
+        w0_y: f64,
         wavelength: f64,
     ) -> Self {
         GaussianBeam {
@@ -167,7 +167,7 @@ pub fn get_gaussian_beam_intensity(
     beam: &GaussianBeam,
     pos: &Position,
     mask: Option<&CircularMask>,
-    frame: &Frame,
+    frame: Option<&Frame>,
 ) -> f64 {
 
 
@@ -175,7 +175,7 @@ pub fn get_gaussian_beam_intensity(
         &pos.pos,
         &beam.intersection,
         &beam.direction,
-        frame,
+        frame.expect("REASON"),
     );
 
     2.0 * beam.power / PI / beam.w0_x / beam.w0_y / (1.0 + (z / beam.rayleigh_range_x).powf(2.0)).powf(0.5) 
