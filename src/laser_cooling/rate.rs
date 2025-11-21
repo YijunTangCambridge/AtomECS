@@ -6,7 +6,6 @@ use std::marker::PhantomData;
 
 use super::CoolingLight;
 use super::transition::{TransitionComponent};
-
 use crate::laser::gaussian::GaussianBeam;
 use crate::laser::index::LaserIndex;
 use crate::laser::intensity::LaserIntensitySamplers;
@@ -192,8 +191,8 @@ pub mod tests {
                 w0_x: 2.0,
                 w0_y: 2.0,
                 power: 1.0,
-                rayleigh_range_x: gaussian::calculate_rayleigh_range(&wavelength, &2.0),
-                rayleigh_range_y: gaussian::calculate_rayleigh_range(&wavelength, &2.0),
+                rayleigh_range_x: crate::laser::gaussian::calculate_rayleigh_range(&wavelength, &2.0),
+                rayleigh_range_y: crate::laser::gaussian::calculate_rayleigh_range(&wavelength, &2.0),
             })
             .build();
 
