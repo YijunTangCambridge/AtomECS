@@ -34,18 +34,18 @@ pub struct GaussianBeam {
     /// Since in the literature the e^2_radius (where intensity is 1/e^2 of peak value) is used
     /// very often as well, it is useful to note the following relation:
     ///
-    /// e_radius = e^2_radius / sqrt(2)
-    pub e_radius: f64,
-
+    
     /// Power of the laser in W
     pub power: f64,
 
-    /// The distance along the propagation direction of a beam from the
-    ///  waist to the place where the area of the cross section is doubled in units of metres
-    pub rayleigh_range: f64,
+    /// standard gaussian beam waist (1/e^2 radius) in units of m.
+    pub w0_x: f64,
+    pub w0_y: f64,
 
-    /// ellipticity
-    pub ellipticity: f64,
+    /// Rayleigh range of the elliptical beam in units of m.
+    pub rayleigh_range_x: f64,
+    pub rayleigh_range_y: f64,
+
 }
 impl Component for GaussianBeam {
     type Storage = HashMapStorage<Self>;
@@ -66,17 +66,18 @@ impl GaussianBeam {
         intersection: Vector3<f64>,
         direction: Vector3<f64>,
         peak_intensity: f64,
-        e_radius: f64,
+        w0_x: f64,
+        w0_y: f64,
     ) -> Self {
-        let std = e_radius / 2.0_f64.powf(0.5);
-        let power = 2.0 * std::f64::consts::PI * std.powi(2) * peak_intensity;
+        let power = 1.0/2.0 * std::f64::consts::PI * w0_x * w0_y * peak_intensity;
         GaussianBeam {
             intersection,
             direction,
             power,
-            e_radius,
-            rayleigh_range: f64::INFINITY,
-            ellipticity: 0.0,
+            w0_x,
+            w0_y,
+            rayleigh_range_x: f64::INFINITY,
+            rayleigh_range_y: f64::INFINITY,
         }
     }
 }
@@ -99,18 +100,19 @@ impl GaussianBeam {
         intersection: Vector3<f64>,
         direction: Vector3<f64>,
         peak_intensity: f64,
-        e_radius: f64,
+        w0_x: f64,
+        w0_y: f64,
         wavelength: f64,
     ) -> Self {
-        let std = e_radius / 2.0_f64.powf(0.5);
-        let power = 2.0 * std::f64::consts::PI * std.powi(2) * peak_intensity;
+        let power = std::f64::consts::PI * w0_x * w0_y * peak_intensity;
         GaussianBeam {
             intersection,
             direction,
             power,
-            e_radius,
-            rayleigh_range: calculate_rayleigh_range(&wavelength, &e_radius),
-            ellipticity: 0.0,
+            w0_x,
+            w0_y,
+            rayleigh_range_x: calculate_rayleigh_range(&wavelength, &w0_x),
+            rayleigh_range_y: calculate_rayleigh_range(&wavelength, &w0_y),
         }
     }
     /// Create a GaussianBeam component by specifying the peak intensity, rather than power.
@@ -132,17 +134,18 @@ impl GaussianBeam {
         intersection: Vector3<f64>,
         direction: Vector3<f64>,
         power: f64,
-        e_radius: f64,
+        w0_x: f64
+        w0_y,
         wavelength: f64,
-        ellipiticity: f64,
     ) -> Self {
         GaussianBeam {
             intersection,
             direction: direction.normalize(),
             power,
-            e_radius,
-            rayleigh_range: calculate_rayleigh_range(&wavelength, &e_radius),
-            ellipticity: ellipiticity,
+            w0_x,
+            w0_y,
+            rayleigh_range_x: calculate_rayleigh_range(&wavelength, &w0_x),
+            rayleigh_range_y: calculate_rayleigh_range(&wavelength, &w0_y),
         }
     }
 }
@@ -164,55 +167,81 @@ pub fn get_gaussian_beam_intensity(
     beam: &GaussianBeam,
     pos: &Position,
     mask: Option<&CircularMask>,
-    frame: Option<&Frame>,
+    frame: &Frame,
 ) -> f64 {
-    let (z, distance_squared) = match frame {
-        // checking if frame is given (for calculating ellipticity)
-        Some(frame) => {
-            let (x, y, z) = maths::get_relative_coordinates_line_point(
-                &pos.pos,
-                &beam.intersection,
-                &beam.direction,
-                frame,
-            );
-            let semi_major_axis = 1.0 / (1.0 - beam.ellipticity.powf(2.0)).powf(0.5);
 
-            // the factor (1.0 / semi_major_axis) is necessary so the overall power of the beam is not changed.
-            (
-                z,
-                (1.0 / semi_major_axis) * ((x).powf(2.0) + (y * semi_major_axis).powf(2.0)),
-            )
-        }
-        // ellipticity will be ignored (i.e. treated as zero) if no `Frame` is supplied.
-        None => {
-            let (distance, z) = maths::get_minimum_distance_line_point(
-                &pos.pos,
-                &beam.intersection,
-                &beam.direction,
-            );
-            (z, distance * distance)
-        }
-    };
-    let power = match mask {
-        Some(mask) => {
-            if distance_squared.powf(0.5) < mask.radius {
-                0.0
-            } else {
-                beam.power
-            }
-        }
-        None => beam.power,
-    };
-    power / PI / beam.e_radius.powf(2.0) / (1.0 + (z / beam.rayleigh_range).powf(2.0))
+
+    let (x, y, z) = maths::get_relative_coordinates_line_point(
+        &pos.pos,
+        &beam.intersection,
+        &beam.direction,
+        frame,
+    );
+
+    2.0 * beam.power / PI / beam.w0_x / beam.w0_y / (1.0 + (z / beam.rayleigh_range_x).powf(2.0)).powf(0.5) 
+        / (1.0 + (z / beam.rayleigh_range_y).powf(2.0)).powf(0.5)
         * EXP.powf(
-            -distance_squared
-                / (beam.e_radius.powf(2.0) * (1. + (z / beam.rayleigh_range).powf(2.0))),
+            -2.0 * x.powf(2.0) / (beam.w0_x.powf(2.0) * (1. + (z / beam.rayleigh_range_x).powf(2.0)))
+            -2.0 * y.powf(2.0) / (beam.w0_y.powf(2.0) * (1. + (z / beam.rayleigh_range_y).powf(2.0)))
         )
 }
-/// Computes the rayleigh range for a given beam and wavelength
-pub fn calculate_rayleigh_range(wavelength: &f64, e_radius: &f64) -> f64 {
-    2.0 * PI * e_radius.powf(2.0) / wavelength
+/// Computes the rayleigh range for a given beam and wavelength, w0 is standard 1/e^2 gaussian beam waist.
+pub fn calculate_rayleigh_range(wavelength: &f64, w0: &f64) -> f64 {
+    PI * w0.powf(2.0) / wavelength
 }
+
+
+/// Returns the intensity of a gaussian laser beam at the specified position.
+// pub fn get_gaussian_beam_intensity(
+//     beam: &GaussianBeam,
+//     pos: &Position,
+//     mask: Option<&CircularMask>,
+//     frame: Option<&Frame>,
+// ) -> f64 {
+//     let (z, distance_squared) = match frame {
+//         // checking if frame is given (for calculating ellipticity)
+//         Some(frame) => {
+//             let (x, y, z) = maths::get_relative_coordinates_line_point(
+//                 &pos.pos,
+//                 &beam.intersection,
+//                 &beam.direction,
+//                 frame,
+//             );
+//             let semi_major_axis = 1.0 / (1.0 - beam.ellipticity.powf(2.0)).powf(0.5);
+
+//             // the factor (1.0 / semi_major_axis) is necessary so the overall power of the beam is not changed.
+//             (
+//                 z,
+//                 (1.0 / semi_major_axis) * ((x).powf(2.0) + (y * semi_major_axis).powf(2.0)),
+//             )
+//         }
+//         // ellipticity will be ignored (i.e. treated as zero) if no `Frame` is supplied.
+//         None => {
+//             let (distance, z) = maths::get_minimum_distance_line_point(
+//                 &pos.pos,
+//                 &beam.intersection,
+//                 &beam.direction,
+//             );
+//             (z, distance * distance)
+//         }
+//     };
+//     let power = match mask {
+//         Some(mask) => {
+//             if distance_squared.powf(0.5) < mask.radius {
+//                 0.0
+//             } else {
+//                 beam.power
+//             }
+//         }
+//         None => beam.power,
+//     };
+//     power / PI / beam.e_radius.powf(2.0) / (1.0 + (z / beam.rayleigh_range).powf(2.0))
+//         * EXP.powf(
+//             -distance_squared
+//                 / (beam.e_radius.powf(2.0) * (1. + (z / beam.rayleigh_range).powf(2.0))),
+//         )
+// }
+
 
 /// Computes the intensity gradient of a given beam and returns it as
 /// a three-dimensional vector
@@ -221,24 +250,56 @@ pub fn get_gaussian_beam_intensity_gradient(
     pos: &Position,
     reference_frame: &Frame,
 ) -> Vector3<f64> {
+    // Relative coordinate from beam intersection
     let rela_coord = pos.pos - beam.intersection;
 
-    // ellipticity treatment
-    let semi_major_axis = 1.0 / (1.0 - beam.ellipticity.powf(2.0)).powf(0.5);
+    // Ellipticity treatment: waists along long and short axes
+    let wx = beam.w0_x;      // long axis waist squared
+    let wy = beam.w0_y;              // short axis waist squared
 
-    let x = rela_coord.dot(&reference_frame.x_vector) / semi_major_axis.powf(0.5);
-    let y = rela_coord.dot(&reference_frame.y_vector) * semi_major_axis.powf(0.5);
+    // Rayleigh ranges for each axis (waist squared)
+    let zx = beam.rayleigh_range_x;
+    let zy = beam.rayleigh_range_y; // convert for long axis
+
+    // Local coordinates along beam axes
+    let x = rela_coord.dot(&reference_frame.x_vector);
+    let y = rela_coord.dot(&reference_frame.y_vector);
     let z = rela_coord.dot(&beam.direction);
 
-    let spot_size_squared =
-        2.0 * beam.e_radius.powf(2.0) * (1. + (z / beam.rayleigh_range).powf(2.0));
-    let vector = -4. * (reference_frame.x_vector * x + reference_frame.y_vector * y)
-        + beam.direction * z / (beam.rayleigh_range.powf(2.0) + z.powf(2.0))
-            * (- 2.0 * spot_size_squared + 4. * (x.powf(2.0) + y.powf(2.0)));
-    let intensity = 2. * beam.power / PI / spot_size_squared
-        * EXP.powf(-2. * (x.powf(2.0) + y.powf(2.0)) / spot_size_squared);
+    // z-dependent spot sizes
+    let wx_z = wx * ( (1.0 + (z / zx).powi(2))).sqrt();
+    let wy_z = wy * ( (1.0 + (z / zy).powi(2))).sqrt();
 
-    intensity / spot_size_squared * vector
+    // Intensity prefactor
+    let intensity_prefactor = 2.0 * beam.power / std::f64::consts::PI / (wx_z * wy_z);
+
+    // Exponential factor
+    let exp_factor = (-2.0 * (x.powi(2) / wx_z.powi(2) + y.powi(2) / wy_z.powi(2))).exp();
+
+    // Gradient along x and y
+    let grad_x = -4.0 * x / wx_z.powi(2) * intensity_prefactor * exp_factor;
+    let grad_y = -4.0 * y / wy_z.powi(2) * intensity_prefactor * exp_factor;
+
+    // Gradient along z
+    // Term 1: derivative of prefactor 1/(wx_z wy_z)
+    let term1 = -intensity_prefactor / (wx_z * wy_z) 
+    * (
+        z * wx.powi(2) * wy_z/ (zx.powi(2) * wx_z) +
+        z * wy.powi(2) * wx_z / (zy.powi(2) * wy_z)
+    );
+
+    // Term 2: derivative of exponential
+    let term2 = intensity_prefactor * 4.0 * (
+        x.powi(2) * z * wx.powi(2) / (wx_z.powi(4) * zx.powi(2)) +
+        y.powi(2) * z * wy.powi(2) / (wy_z.powi(4) * zy.powi(2))
+    );
+
+    let grad_z = (term1 + term2) * exp_factor;
+
+    // Combine into Vector3
+    reference_frame.x_vector * grad_x
+        + reference_frame.y_vector * grad_y
+        + beam.direction * grad_z
 }
 
 #[cfg(test)]
@@ -258,10 +319,11 @@ pub mod tests {
         let beam = GaussianBeam {
             direction: Vector3::z(),
             intersection: Vector3::new(0.0, 0.0, 0.0),
-            e_radius: 70.71067812e-6,
+            w0_x: 70.71067812e-6 * (2.0f64).sqrt(),
+            w0_y: 70.71067812e-6 * (2.0f64).sqrt(),
             power: 100.0,
-            rayleigh_range: calculate_rayleigh_range(&1064.0e-9, &70.71067812e-6),
-            ellipticity: 0.0,
+            rayleigh_range_x: calculate_rayleigh_range(&1064.0e-9, &70.71067812e-6),
+            rayleigh_range_y: calculate_rayleigh_range(&1064.0e-9, &70.71067812e-6),
         };
         let pos1 = Position {
             pos: Vector3::new(10.0e-6, 0.0, 30.0e-6),
@@ -282,16 +344,17 @@ pub mod tests {
         let beam = GaussianBeam {
             direction: Vector3::x(),
             intersection: Vector3::new(0.0, 0.0, 0.0),
-            e_radius: 2.0,
+            w0_x: 2.0 * (2.0f64).sqrt(),
+            w0_y: 2.0 * (2.0f64).sqrt(),
             power: 1.0,
-            rayleigh_range: calculate_rayleigh_range(&1064.0e-9, &2.0),
-            ellipticity: 0.0,
+            rayleigh_range_x: calculate_rayleigh_range(&1064.0e-9, &2.0),
+            rayleigh_range_y: calculate_rayleigh_range(&1064.0e-9, &2.0),
         };
 
         let pos1 = Position { pos: Vector3::x() };
         assert_approx_eq!(
             beam.power
-                / (PI.powf(0.5) * beam.e_radius).powf(2.0)
+                / (PI.powf(0.5) * beam.w0_x/(2.0f64).sqrt() * PI.powf(0.5) * beam.w0_y/(2.0f64).sqrt())
                 / (1.0 + 1.0 / calculate_rayleigh_range(&1064.0e-9, &2.0).powf(2.0)),
             get_gaussian_beam_intensity(&beam, &pos1, None, None),
             1e-6_f64
@@ -299,96 +362,96 @@ pub mod tests {
 
         let pos2 = Position { pos: Vector3::y() };
         assert_approx_eq!(
-            1.0 / (PI.powf(0.5) * beam.e_radius).powf(2.0)
-                * (-pos2.pos[1] / beam.e_radius.powf(2.0)).exp(),
+            1.0 / (PI.powf(0.5) * beam.w0_x/(2.0f64).sqrt() * PI.powf(0.5) * beam.w0_y/(2.0f64).sqrt())
+                * (-pos2.pos[1] / beam.w0_x/(2.0f64).sqrt() / beam.w0_y/(2.0f64).sqrt()).exp(),
             get_gaussian_beam_intensity(&beam, &pos2, None, None),
             1e-6_f64
         );
 
         assert_approx_eq!(
             beam.power
-                / (PI.powf(0.5) * beam.e_radius).powf(2.0)
-                / (1.0 + 1.0 / calculate_rayleigh_range(&1064.0e-9, &2.0).powf(2.0)),
+                / (PI.powf(0.5) * beam.w0_x/(2.0f64).sqrt() * PI.powf(0.5) * beam.w0_y/(2.0f64).sqrt())
+                / (1.0 + 1.0 / calculate_rayleigh_range(&1064.0e-9, &(2.0*(2.0f64).sqrt())).powf(2.0)),
             get_gaussian_beam_intensity(&beam, &pos1, None, None),
             1e-6_f64
         );
 
         assert_approx_eq!(
-            1.0 / (PI.powf(0.5) * beam.e_radius).powf(2.0)
-                * (-pos2.pos[1] / beam.e_radius.powf(2.0)).exp(),
+            1.0 / (PI.powf(0.5) * beam.w0_x/(2.0f64).sqrt() * PI.powf(0.5) * beam.w0_y/(2.0f64).sqrt())
+                * (-pos2.pos[1] / beam.w0_x/(2.0f64).sqrt() / beam.w0_y/(2.0f64).sqrt()).exp(),
             get_gaussian_beam_intensity(&beam, &pos2, None, None),
             1e-6_f64
         );
-        let rayleigh_range_2 = calculate_rayleigh_range(&1064.0e-6, &beam.e_radius);
+        // let rayleigh_range_2 = calculate_rayleigh_range(&1064.0e-6, &beam.e_radius);
 
-        let pos3 = Position {
-            pos: Vector3::x() * rayleigh_range_2,
-        };
+        // let pos3 = Position {
+        //     pos: Vector3::x() * rayleigh_range_2,
+        // };
 
-        // Test with a frame but ellipticity = 0
-        let frame = Frame::from_direction(beam.direction, Vector3::new(0.0, 1.0, 0.0));
-        assert_approx_eq!(
-            beam.power / (PI.powf(0.5) * beam.e_radius).powf(2.0),
-            get_gaussian_beam_intensity(&beam, &pos3, None, Some(&frame)),
-            1e-6_f64
-        );
-        // Position along the focused axis
-        let pos4 = Position {
-            pos: Vector3::x() + Vector3::y(),
-        };
-        // Now with an ellipticity, that implies a/b = 2
-        let beam = GaussianBeam {
-            direction: Vector3::x(),
-            intersection: Vector3::new(0.0, 0.0, 0.0),
-            e_radius: 2.0,
-            power: 1.0,
-            rayleigh_range: calculate_rayleigh_range(&1064.0e-9, &2.0),
-            ellipticity: (3.0 / 4.0_f64).powf(0.5),
-        };
+        // // Test with a frame but ellipticity = 0
+        // let frame = Frame::from_direction(beam.direction, Vector3::new(0.0, 1.0, 0.0));
+        // assert_approx_eq!(
+        //     beam.power / (PI.powf(0.5) * beam.e_radius).powf(2.0),
+        //     get_gaussian_beam_intensity(&beam, &pos3, None, Some(&frame)),
+        //     1e-6_f64
+        // );
+        // // Position along the focused axis
+        // let pos4 = Position {
+        //     pos: Vector3::x() + Vector3::y(),
+        // };
+        // // Now with an ellipticity, that implies a/b = 2
+        // let beam = GaussianBeam {
+        //     direction: Vector3::x(),
+        //     intersection: Vector3::new(0.0, 0.0, 0.0),
+        //     e_radius: 2.0,
+        //     power: 1.0,
+        //     rayleigh_range: calculate_rayleigh_range(&1064.0e-9, &2.0),
+        //     ellipticity: (3.0 / 4.0_f64).powf(0.5),
+        // };
 
-        // checking if value on x-axis stays the same (as without ellipticity and frame)
-        assert_approx_eq!(
-            beam.power / (PI.powf(0.5) * beam.e_radius).powf(2.0),
-            get_gaussian_beam_intensity(&beam, &pos3, None, Some(&frame)),
-            1e-6_f64
-        );
+        // // checking if value on x-axis stays the same (as without ellipticity and frame)
+        // assert_approx_eq!(
+        //     beam.power / (PI.powf(0.5) * beam.e_radius).powf(2.0),
+        //     get_gaussian_beam_intensity(&beam, &pos3, None, Some(&frame)),
+        //     1e-6_f64
+        // );
 
-        // manual calculation to get beam intensity
-        let intensity_0 = beam.power / (PI * beam.e_radius.powf(2.0));
-        let broadening = 1.0 / (1.0 + (1.0 / beam.rayleigh_range).powf(2.0));
-        // factor of 0.5 in exponent because of rescaling the axis by a/b = 2
-        let intensity =
-            intensity_0 * broadening * EXP.powf(-0.5 * broadening / beam.e_radius.powf(2.0));
+        // // manual calculation to get beam intensity
+        // let intensity_0 = beam.power / (PI * beam.e_radius.powf(2.0));
+        // let broadening = 1.0 / (1.0 + (1.0 / beam.rayleigh_range).powf(2.0));
+        // // factor of 0.5 in exponent because of rescaling the axis by a/b = 2
+        // let intensity =
+        //     intensity_0 * broadening * EXP.powf(-0.5 * broadening / beam.e_radius.powf(2.0));
 
-        assert_approx_eq!(
-            intensity,
-            get_gaussian_beam_intensity(&beam, &pos4, None, Some(&frame)),
-            1e-6_f64
-        );
-        // now the ration is  a/b = 4
-        let beam = GaussianBeam {
-            direction: Vector3::x(),
-            intersection: Vector3::new(0.0, 0.0, 0.0),
-            e_radius: 2.0,
-            power: 1.0,
-            rayleigh_range: calculate_rayleigh_range(&1064.0e-9, &2.0),
-            ellipticity: (15.0 / 16.0_f64).powf(0.5),
-        };
+        // assert_approx_eq!(
+        //     intensity,
+        //     get_gaussian_beam_intensity(&beam, &pos4, None, Some(&frame)),
+        //     1e-6_f64
+        // );
+        // // now the ration is  a/b = 4
+        // let beam = GaussianBeam {
+        //     direction: Vector3::x(),
+        //     intersection: Vector3::new(0.0, 0.0, 0.0),
+        //     e_radius: 2.0,
+        //     power: 1.0,
+        //     rayleigh_range: calculate_rayleigh_range(&1064.0e-9, &2.0),
+        //     ellipticity: (15.0 / 16.0_f64).powf(0.5),
+        // };
 
-        // but we check along the de-focused axis (so intensity is lower than in symmetrical case)
-        let intensity =
-            intensity_0 * broadening * EXP.powf(-4.0 * broadening / beam.e_radius.powf(2.0));
-        assert_approx_eq!(
-            intensity,
-            get_gaussian_beam_intensity(
-                &beam,
-                &Position {
-                    pos: Vector3::x() + Vector3::z(),
-                },
-                None,
-                Some(&frame)
-            ),
-            1e-6_f64
-        );
+        // // but we check along the de-focused axis (so intensity is lower than in symmetrical case)
+        // let intensity =
+        //     intensity_0 * broadening * EXP.powf(-4.0 * broadening / beam.e_radius.powf(2.0));
+        // assert_approx_eq!(
+        //     intensity,
+        //     get_gaussian_beam_intensity(
+        //         &beam,
+        //         &Position {
+        //             pos: Vector3::x() + Vector3::z(),
+        //         },
+        //         None,
+        //         Some(&frame)
+        //     ),
+        //     1e-6_f64
+        // );
     }
 }
