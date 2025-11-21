@@ -165,15 +165,17 @@ pub mod tests {
         test_world.register::<crate::laser::frame::Frame>();
 
         let power = 10.0;
-        let e_radius = 60.0e-6 / (2.0_f64.sqrt());
+        let w0_x = 60.0e-6;
+        let w0_y = 60.0e-6;
 
         let gaussian_beam = GaussianBeam {
             intersection: Vector3::new(0.0, 0.0, 0.0),
-            e_radius,
-            power,
+            w0_x: w0_x,
+            w0_y: w0_y,
+            power: power,
             direction: Vector3::x(),
-            rayleigh_range: crate::laser::gaussian::calculate_rayleigh_range(&1064.0e-9, &e_radius),
-            ellipticity: 0.0,
+            rayleigh_range_x: crate::laser::gaussian::calculate_rayleigh_range(&1064.0e-9, &w0_x),
+            rayleigh_range_y: crate::laser::gaussian::calculate_rayleigh_range(&1064.0e-9, &w0_y),
         };
         test_world
             .create_entity()
@@ -192,11 +194,12 @@ pub mod tests {
             .build();
         let gaussian_beam = GaussianBeam {
             intersection: Vector3::new(0.0, 0.0, 0.0),
-            e_radius,
-            power,
+            w0_x: w0_x,
+            w0_y: w0_y,
+            power: power,
             direction: Vector3::y(),
-            rayleigh_range: crate::laser::gaussian::calculate_rayleigh_range(&1064.0e-9, &e_radius),
-            ellipticity: 0.0,
+            rayleigh_range_x: crate::laser::gaussian::calculate_rayleigh_range(&1064.0e-9, &w0_x),
+            rayleigh_range_y: crate::laser::gaussian::calculate_rayleigh_range(&1064.0e-9, &w0_y),
         };
         test_world
             .create_entity()

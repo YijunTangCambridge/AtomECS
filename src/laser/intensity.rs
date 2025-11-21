@@ -123,7 +123,7 @@ impl<'a, const N: usize> System<'a> for SampleLaserIntensitySystem<N> {
                             gaussian,
                             pos,
                             mask.as_ref(),
-                            frame.as_ref(),
+                            frame.as_ref().expect("REASON"),
                         );
                     }
                 });

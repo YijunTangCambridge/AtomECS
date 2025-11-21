@@ -135,7 +135,7 @@ impl GaussianBeam {
         direction: Vector3<f64>,
         power: f64,
         w0_x: f64
-        w0_y,
+        w0_y: f64
         wavelength: f64,
     ) -> Self {
         GaussianBeam {
