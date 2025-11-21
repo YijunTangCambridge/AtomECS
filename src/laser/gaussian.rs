@@ -166,7 +166,7 @@ impl Component for CircularMask {
 pub fn get_gaussian_beam_intensity(
     beam: &GaussianBeam,
     pos: &Position,
-    mask: Option<&CircularMask>,
+    _mask: Option<&CircularMask>,
     frame: Option<&Frame>,
 ) -> f64 {
 

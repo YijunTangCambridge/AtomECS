@@ -86,7 +86,7 @@ impl<'a> System<'a> for VelocityVerletIntegratePositionSystem {
 
         (&mut pos, &vel, &mut old_force, &force, &mass)
             .par_join()
-            .for_each(|(mut pos, vel, mut old_force, force, mass)| {
+            .for_each(|(pos, vel, old_force, force, mass)| {
                 pos.pos = pos.pos
                     + vel.vel * dt
                     + force.force / (constant::AMU * mass.value) / 2.0 * dt * dt;

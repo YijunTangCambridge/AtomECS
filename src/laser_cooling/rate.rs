@@ -6,6 +6,7 @@ use std::marker::PhantomData;
 
 use super::CoolingLight;
 use super::transition::{TransitionComponent};
+use crate::laser::gaussian;
 use crate::laser::gaussian::GaussianBeam;
 use crate::laser::index::LaserIndex;
 use crate::laser::intensity::LaserIntensitySamplers;
@@ -57,7 +58,7 @@ impl<'a, T, const N: usize> System<'a> for InitialiseRateCoefficientsSystem<T, N
 
         (&mut rate_coefficients)
             .par_join()
-            .for_each(|mut rate_coefficient| {
+            .for_each(|rate_coefficient| {
                 rate_coefficient.contents = [RateCoefficient::default(); N];
             });
     }

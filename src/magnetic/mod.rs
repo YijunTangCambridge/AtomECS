@@ -76,7 +76,7 @@ impl<'a> System<'a> for ClearMagneticFieldSamplerSystem {
     fn run(&mut self, mut sampler: Self::SystemData) {
         use rayon::prelude::*;
 
-        (&mut sampler).par_join().for_each(|mut sampler| {
+        (&mut sampler).par_join().for_each(|sampler| {
             sampler.magnitude = 0.;
             sampler.field = Vector3::new(0.0, 0.0, 0.0);
             sampler.gradient = Vector3::new(0.0, 0.0, 0.0);
@@ -96,7 +96,7 @@ impl<'a> System<'a> for CalculateMagneticFieldMagnitudeSystem {
     fn run(&mut self, mut sampler: Self::SystemData) {
         use rayon::prelude::*;
 
-        (&mut sampler).par_join().for_each(|mut sampler| {
+        (&mut sampler).par_join().for_each(|sampler| {
             sampler.magnitude = sampler.field.norm();
             if sampler.magnitude.is_nan() {
                 sampler.magnitude = 0.0;
@@ -115,7 +115,7 @@ impl<'a> System<'a> for CalculateMagneticMagnitudeGradientSystem {
     fn run(&mut self, mut sampler: Self::SystemData) {
         use rayon::prelude::*;
 
-        (&mut sampler).par_join().for_each(|mut sampler| {
+        (&mut sampler).par_join().for_each(|sampler| {
             let mut gradient = Vector3::new(0.0, 0.0, 0.0);
             for i in 0..3 {
                 gradient[i] =

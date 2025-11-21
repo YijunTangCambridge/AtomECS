@@ -198,7 +198,7 @@ impl<'a> System<'a> for ApplyCollisionsSystem {
                 // build list of ids for each atom
                 (&positions, &mut boxids)
                     .par_join()
-                    .for_each(|(position, mut boxid)| {
+                    .for_each(|(position, boxid)| {
                         boxid.id = pos_to_id(position.pos, n, params.box_width);
                     });
 

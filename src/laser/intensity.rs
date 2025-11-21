@@ -53,7 +53,7 @@ impl<'a, const N: usize> System<'a> for InitialiseLaserIntensitySamplersSystem<N
     fn run(&mut self, (mut samplers,): Self::SystemData) {
         use rayon::prelude::*;
 
-        (&mut samplers).par_join().for_each(|mut sampler| {
+        (&mut samplers).par_join().for_each(|sampler| {
             sampler.contents = [LaserIntensitySampler::default(); N];
         });
     }

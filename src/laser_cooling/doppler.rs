@@ -99,7 +99,7 @@ impl<'a, const N: usize> System<'a> for InitialiseDopplerShiftSamplersSystem<N> 
     fn run(&mut self, (mut samplers,): Self::SystemData) {
         use rayon::prelude::*;
 
-        (&mut samplers).par_join().for_each(|mut sampler| {
+        (&mut samplers).par_join().for_each(|sampler| {
             sampler.contents = [DopplerShiftSampler::default(); N];
         });
     }

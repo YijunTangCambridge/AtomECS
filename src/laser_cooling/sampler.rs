@@ -58,7 +58,7 @@ impl<'a, T, const N: usize> System<'a> for InitialiseLaserDetuningSamplersSystem
     fn run(&mut self, (mut samplers,): Self::SystemData) {
         use rayon::prelude::*;
 
-        (&mut samplers).par_join().for_each(|mut sampler| {
+        (&mut samplers).par_join().for_each(|sampler| {
             sampler.contents = [LaserDetuningSampler::default(); N];
         });
     }
