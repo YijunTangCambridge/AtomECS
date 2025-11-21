@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 
 use super::CoolingLight;
 use super::transition::{TransitionComponent};
-use crate::laser::gaussian;
+
 use crate::laser::gaussian::GaussianBeam;
 use crate::laser::index::LaserIndex;
 use crate::laser::intensity::LaserIntensitySamplers;
