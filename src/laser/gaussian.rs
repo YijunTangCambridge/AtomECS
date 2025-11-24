@@ -170,12 +170,17 @@ pub fn get_gaussian_beam_intensity(
     frame: Option<&Frame>,
 ) -> f64 {
 
+    let binding = Frame{
+    x_vector: Vector3::x(),
+    y_vector: Vector3::y(),
+    };
+    let frame = frame.unwrap_or(&binding);
 
     let (x, y, z) = maths::get_relative_coordinates_line_point(
         &pos.pos,
         &beam.intersection,
         &beam.direction,
-        frame.expect("REASON"),
+        &frame,
     );
 
     2.0 * beam.power / PI / beam.w0_x / beam.w0_y / (1.0 + (z / beam.rayleigh_range_x).powf(2.0)).powf(0.5) 
@@ -348,8 +353,8 @@ pub mod tests {
         let beam = GaussianBeam {
             direction: Vector3::x(),
             intersection: Vector3::new(0.0, 0.0, 0.0),
-            w0_x: 2.0 * (2.0f64).sqrt(),
-            w0_y: 2.0 * (2.0f64).sqrt(),
+            w0_x: 2.0,
+            w0_y: 2.0,
             power: 1.0,
             rayleigh_range_x: calculate_rayleigh_range(&1064.0e-9, &2.0),
             rayleigh_range_y: calculate_rayleigh_range(&1064.0e-9, &2.0),
@@ -358,7 +363,7 @@ pub mod tests {
         let pos1 = Position { pos: Vector3::x() };
         assert_approx_eq!(
             beam.power
-                / (PI.powf(0.5) * beam.w0_x/(2.0f64).sqrt() * PI.powf(0.5) * beam.w0_y/(2.0f64).sqrt())
+                / (PI.powf(0.5) * beam.w0_x.sqrt() * PI.powf(0.5) * beam.w0_y.sqrt())
                 / (1.0 + 1.0 / calculate_rayleigh_range(&1064.0e-9, &2.0).powf(2.0)),
             get_gaussian_beam_intensity(&beam, &pos1, None, None),
             1e-6_f64
@@ -366,8 +371,8 @@ pub mod tests {
 
         let pos2 = Position { pos: Vector3::y() };
         assert_approx_eq!(
-            1.0 / (PI.powf(0.5) * beam.w0_x/(2.0f64).sqrt() * PI.powf(0.5) * beam.w0_y/(2.0f64).sqrt())
-                * (-pos2.pos[1] / beam.w0_x/(2.0f64).sqrt() / beam.w0_y/(2.0f64).sqrt()).exp(),
+            1.0 / (PI.powf(0.5) * beam.w0_x.sqrt() * PI.powf(0.5) * beam.w0_y.sqrt())
+                * (-pos2.pos[1] / beam.w0_x.sqrt() / beam.w0_y.sqrt()).exp(),
             get_gaussian_beam_intensity(&beam, &pos2, None, None),
             1e-6_f64
         );
@@ -381,81 +386,31 @@ pub mod tests {
         );
 
         assert_approx_eq!(
-            1.0 / (PI.powf(0.5) * beam.w0_x/(2.0f64).sqrt() * PI.powf(0.5) * beam.w0_y/(2.0f64).sqrt())
-                * (-pos2.pos[1] / beam.w0_x/(2.0f64).sqrt() / beam.w0_y/(2.0f64).sqrt()).exp(),
+            1.0 / (PI.powf(0.5) * beam.w0_x.sqrt() * PI.powf(0.5) * beam.w0_y.sqrt())
+                * (-pos2.pos[1] / beam.w0_x.sqrt() / beam.w0_y.sqrt()).exp(),
             get_gaussian_beam_intensity(&beam, &pos2, None, None),
             1e-6_f64
         );
-        // let rayleigh_range_2 = calculate_rayleigh_range(&1064.0e-6, &beam.e_radius);
 
-        // let pos3 = Position {
-        //     pos: Vector3::x() * rayleigh_range_2,
-        // };
 
-        // // Test with a frame but ellipticity = 0
-        // let frame = Frame::from_direction(beam.direction, Vector3::new(0.0, 1.0, 0.0));
-        // assert_approx_eq!(
-        //     beam.power / (PI.powf(0.5) * beam.e_radius).powf(2.0),
-        //     get_gaussian_beam_intensity(&beam, &pos3, None, Some(&frame)),
-        //     1e-6_f64
-        // );
-        // // Position along the focused axis
-        // let pos4 = Position {
-        //     pos: Vector3::x() + Vector3::y(),
-        // };
-        // // Now with an ellipticity, that implies a/b = 2
-        // let beam = GaussianBeam {
-        //     direction: Vector3::x(),
-        //     intersection: Vector3::new(0.0, 0.0, 0.0),
-        //     e_radius: 2.0,
-        //     power: 1.0,
-        //     rayleigh_range: calculate_rayleigh_range(&1064.0e-9, &2.0),
-        //     ellipticity: (3.0 / 4.0_f64).powf(0.5),
-        // };
+        let beam2 = GaussianBeam {
+            direction: Vector3::z(),
+            intersection: Vector3::new(0.0, 0.0, 0.0),
+            w0_x: 2.0,
+            w0_y: 2.0,
+            power: 1.0,
+            rayleigh_range_x: calculate_rayleigh_range(&1064.0e-9, &2.0),
+            rayleigh_range_y: calculate_rayleigh_range(&1064.0e-9, &2.0),
+        };
 
-        // // checking if value on x-axis stays the same (as without ellipticity and frame)
-        // assert_approx_eq!(
-        //     beam.power / (PI.powf(0.5) * beam.e_radius).powf(2.0),
-        //     get_gaussian_beam_intensity(&beam, &pos3, None, Some(&frame)),
-        //     1e-6_f64
-        // );
+        let pos4 = Position { pos: Vector3::new(1.0, 2.0, 3.0) };
+        let intensity_from_rust = get_gaussian_beam_intensity(&beam2, &pos4, None, None);
+        println!("Intensity from rust: {}", intensity_from_rust);
+        assert_approx_eq!(
+            0.013064233284686179,
+            intensity_from_rust,
+            1e-12_f64
+        );
 
-        // // manual calculation to get beam intensity
-        // let intensity_0 = beam.power / (PI * beam.e_radius.powf(2.0));
-        // let broadening = 1.0 / (1.0 + (1.0 / beam.rayleigh_range).powf(2.0));
-        // // factor of 0.5 in exponent because of rescaling the axis by a/b = 2
-        // let intensity =
-        //     intensity_0 * broadening * EXP.powf(-0.5 * broadening / beam.e_radius.powf(2.0));
-
-        // assert_approx_eq!(
-        //     intensity,
-        //     get_gaussian_beam_intensity(&beam, &pos4, None, Some(&frame)),
-        //     1e-6_f64
-        // );
-        // // now the ration is  a/b = 4
-        // let beam = GaussianBeam {
-        //     direction: Vector3::x(),
-        //     intersection: Vector3::new(0.0, 0.0, 0.0),
-        //     e_radius: 2.0,
-        //     power: 1.0,
-        //     rayleigh_range: calculate_rayleigh_range(&1064.0e-9, &2.0),
-        //     ellipticity: (15.0 / 16.0_f64).powf(0.5),
-        // };
-
-        // // but we check along the de-focused axis (so intensity is lower than in symmetrical case)
-        // let intensity =
-        //     intensity_0 * broadening * EXP.powf(-4.0 * broadening / beam.e_radius.powf(2.0));
-        // assert_approx_eq!(
-        //     intensity,
-        //     get_gaussian_beam_intensity(
-        //         &beam,
-        //         &Position {
-        //             pos: Vector3::x() + Vector3::z(),
-        //         },
-        //         None,
-        //         Some(&frame)
-        //     ),
-        //     1e-6_f64
-        // );
     }
 }
