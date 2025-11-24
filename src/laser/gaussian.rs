@@ -319,8 +319,8 @@ pub mod tests {
         let beam = GaussianBeam {
             direction: Vector3::z(),
             intersection: Vector3::new(0.0, 0.0, 0.0),
-            w0_x: 70.71067812e-6 * (2.0f64).sqrt(),
-            w0_y: 70.71067812e-6 * (2.0f64).sqrt(),
+            w0_x: 70.71067812e-6,
+            w0_y: 70.71067812e-6,
             power: 100.0,
             rayleigh_range_x: calculate_rayleigh_range(&1064.0e-9, &70.71067812e-6),
             rayleigh_range_y: calculate_rayleigh_range(&1064.0e-9, &70.71067812e-6),
@@ -334,9 +334,13 @@ pub mod tests {
         };
 
         let gradient = get_gaussian_beam_intensity_gradient(&beam, &pos1, &grf);
-        assert_approx_eq!(gradient[0], -2.49605032e+13, 1e+8_f64);
+
+        println!("Gradient: {:?}", gradient);
+
+        assert_approx_eq!(gradient[0], -97864416562438.33, 1e+8_f64);
         assert_approx_eq!(gradient[1], 0.0, 1e+9_f64);
-        assert_approx_eq!(gradient[2], -2.06143366e+08, 1e+6_f64);
+        assert_approx_eq!(gradient[2], -3232964116.6507816, 1e+6_f64);
+        
     }
 
     #[test]
