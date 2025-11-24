@@ -104,7 +104,7 @@ impl GaussianBeam {
         w0_y: f64,
         wavelength: f64,
     ) -> Self {
-        let power = std::f64::consts::PI * w0_x * w0_y * peak_intensity;
+        let power = std::f64::consts::PI * w0_x * w0_y * peak_intensity / 2.0;
         GaussianBeam {
             intersection,
             direction,
