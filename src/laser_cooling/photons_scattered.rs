@@ -123,7 +123,7 @@ impl<'a, T, const N: usize> System<'a> for InitialiseExpectedPhotonsScatteredVec
     fn run(&mut self, (mut expected_photons,): Self::SystemData) {
         use rayon::prelude::*;
 
-        (&mut expected_photons).par_join().for_each(|expected| {
+        (&mut expected_photons).par_join().for_each(|mut expected| {
             expected.contents = [ExpectedPhotonsScattered::default(); N];
         });
     }

@@ -57,7 +57,7 @@ impl<'a, T, const N: usize> System<'a> for InitialiseRateCoefficientsSystem<T, N
 
         (&mut rate_coefficients)
             .par_join()
-            .for_each(|rate_coefficient| {
+            .for_each(|mut rate_coefficient| {
                 rate_coefficient.contents = [RateCoefficient::default(); N];
             });
     }

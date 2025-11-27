@@ -31,7 +31,7 @@ impl<'a> System<'a> for IndexLasersSystem {
             }
         }
         if need_to_assign_indices {
-            for index in (&mut indices).join() {
+            for mut index in (&mut indices).join() {
                 index.index = iter;
                 index.initiated = true;
                 iter += 1;

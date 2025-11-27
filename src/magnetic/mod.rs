@@ -76,7 +76,7 @@ impl<'a> System<'a> for ClearMagneticFieldSamplerSystem {
     fn run(&mut self, mut sampler: Self::SystemData) {
         use rayon::prelude::*;
 
-        (&mut sampler).par_join().for_each(|sampler| {
+        (&mut sampler).par_join().for_each(|mut sampler| {
             sampler.magnitude = 0.;
             sampler.field = Vector3::new(0.0, 0.0, 0.0);
             sampler.gradient = Vector3::new(0.0, 0.0, 0.0);

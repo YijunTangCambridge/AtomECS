@@ -49,7 +49,7 @@ impl<'a> System<'a> for EmitNumberPerFrameSystem {
     );
 
     fn run(&mut self, (emit_numbers, mut numbers_to_emit): Self::SystemData) {
-        for (emit_number, number_to_emit) in (&emit_numbers, &mut numbers_to_emit).join() {
+       for (emit_number, mut number_to_emit) in (&emit_numbers, &mut numbers_to_emit).join() {
             number_to_emit.number = emit_number.number;
         }
     }
@@ -69,7 +69,7 @@ impl<'a> System<'a> for EmitFixedRateSystem {
 
     fn run(&mut self, (rates, timestep, mut emit_numbers): Self::SystemData) {
         let mut rng = rand::thread_rng();
-        for (rate, emit_numbers) in (&rates, &mut emit_numbers).join() {
+        for (rate, mut emit_numbers) in (&rates, &mut emit_numbers).join() {
             let avg_number_to_emit = rate.rate * timestep.delta;
             let guaranteed_number = avg_number_to_emit.floor();
             let number: i32;
@@ -92,7 +92,7 @@ impl<'a> System<'a> for EmitOnceSystem {
     );
 
     fn run(&mut self, (emit_onces, mut emit_numbers): Self::SystemData) {
-        for (_, emit_numbers) in (&emit_onces, &mut emit_numbers).join() {
+        for (_, mut emit_numbers) in (&emit_onces, &mut emit_numbers).join() {
             emit_numbers.number = 0;
         }
     }
