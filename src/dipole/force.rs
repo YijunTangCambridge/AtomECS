@@ -247,7 +247,7 @@ pub mod tests {
         let grad_sampler_storage =
             test_world.read_storage::<LaserIntensityGradientSamplers<{ DEFAULT_BEAM_LIMIT }>>();
         let sim_result_force = sampler_storage.get(atom1).expect("Entity not found!").force;
-        let sim_result_grad = grad_sampler_storage
+        let _sim_result_grad = grad_sampler_storage
             .get(atom1)
             .expect("Entity not found!")
             .contents;
