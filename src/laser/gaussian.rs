@@ -26,14 +26,10 @@ pub struct GaussianBeam {
     /// A point that the laser beam intersects
     pub intersection: Vector3<f64>,
 
-    /// Direction the beam propagates with respect to cartesian `x,y,z` axes.
+    /// Direction the beam propagates, the axis direction of the gaussian beam. 
+    /// the transverse direction is not defined here, they will be defined by frame vectors when extracting 
+    /// gaussian intensity and gaussian intensity gradient
     pub direction: Vector3<f64>,
-
-    /// Radius of the beam at which the intensity is 1/e of the peak value, SI units of m.
-    ///
-    /// Since in the literature the e^2_radius (where intensity is 1/e^2 of peak value) is used
-    /// very often as well, it is useful to note the following relation:
-    ///
     
     /// Power of the laser in W
     pub power: f64,
@@ -61,7 +57,10 @@ impl GaussianBeam {
     ///
     /// `peak_intensity`: peak intensity in units of W/m^2.
     ///
-    /// `e_radius`: radius of beam in units of m.
+    /// `w0_x, w0_y`: radius of beam in units of m.
+
+    /// Here we are defining and unphysical beam, kinda "collimated" beam,
+    /// this bit is used in laser cooling modules.
     pub fn from_peak_intensity(
         intersection: Vector3<f64>,
         direction: Vector3<f64>,
@@ -78,6 +77,7 @@ impl GaussianBeam {
             w0_y,
             rayleigh_range_x: f64::INFINITY,
             rayleigh_range_y: f64::INFINITY,
+
         }
     }
 }
@@ -93,10 +93,10 @@ impl GaussianBeam {
     ///
     /// `peak_intensity`: peak intensity in units of W/m^2.
     ///
-    /// `e_radius`: radius of beam in units of m.
+    /// `w0_x, w0_y`: radius of beam in units of m.
     ///
     /// `wavelength`: wavelength of the electromagnetic light
-    pub fn from_peak_intensity_with_rayleigh_range(
+    pub fn from_peak_intensity_ellipticity_with_rayleigh_range(
         intersection: Vector3<f64>,
         direction: Vector3<f64>,
         peak_intensity: f64,
@@ -163,13 +163,15 @@ impl Component for CircularMask {
 }
 
 /// Returns the intensity of a gaussian laser beam at the specified position.
+
 pub fn get_gaussian_beam_intensity(
     beam: &GaussianBeam,
     pos: &Position,
     _mask: Option<&CircularMask>,
     frame: Option<&Frame>,
 ) -> f64 {
-
+    /// Frame vector specify transverses direction of the beam, then convert pos (which is cartesian standard)
+    /// into beam frame, then fed into standard gaussian intensity formula to extract intensity.
     let binding = Frame{
     x_vector: Vector3::x(),
     y_vector: Vector3::y(),

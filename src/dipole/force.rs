@@ -22,6 +22,9 @@ impl<'a, const N: usize> System<'a> for ApplyDipoleForceSystem<N> {
         WriteStorage<'a, Force>,
     );
 
+    /// Here we are applying dipole force, it extract polarizability factor and gassuain intensity gradient,
+    /// their product is the dipole force
+
     fn run(
         &mut self,
         (dipole_light, dipole_index, polarizability, gradient_sampler, mut force): Self::SystemData,
